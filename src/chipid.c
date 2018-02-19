@@ -3,6 +3,17 @@
 
 static const struct stlink_chipid_params devices[] = {
         {
+            //RM0433 document was used to find these paramaters
+            .chip_id = STLINK_CHIPID_STM32_H7, // section 60.5.8, see DBGMCU->IDC, DEV_ID field
+            .description = "H7 device",
+            .flash_type = STLINK_FLASH_TYPE_F4,
+            .flash_size_reg = 0x1ff1e880,      // section 61.2
+            .flash_pagesize = 0x800,           // No flash pages
+            .sram_size = 0x80000,              // "SRAM" byte size in hex from; i.e. the DTCM-RAM mapped to 0x20000000
+            .bootrom_base = 0x00200000,        //! "System memory" starting address from 
+            .bootrom_size = 0xEDC0             //! @todo "System memory" byte size in hex from 
+        },  
+        {
             //RM0410 document was used to find these paramaters
             .chip_id = STLINK_CHIPID_STM32_F7XXXX,
             .description = "F76xxx device",

@@ -587,11 +587,12 @@ int stlink_chip_id(stlink_t *sl, uint32_t *chip_id) {
     int ret;
 
     ret = stlink_read_debug32(sl, 0xE0042000, chip_id);
-    if (ret == -1)
-        return ret;
 
-    if (*chip_id == 0)
-        ret = stlink_read_debug32(sl, 0x40015800, chip_id);    //Try Corex M0 DBGMCU_IDCODE register address
+    if (ret != -1 && *chip_id == 0)
+        ret = stlink_read_debug32(sl, 0x40015800, chip_id); //Try Corex M0 DBGMCU_IDCODE register address
+
+    if(ret != -1 && *chip_id == 0)
+        ret = stlink_read_debug32(sl, 0x5C001000, chip_id); // DBGMCU->IDC on STM32H7
 
     return ret;
 }

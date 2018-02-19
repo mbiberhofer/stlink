@@ -200,7 +200,47 @@ static const uint8_t loader_code_stm32vl[] = {
         0x00, 0x3c, 0x02, 0x40  //      .word   0x40023c00
     };
 
+    static const uint8_t loader_code_stm32h7[] = {
+        // flashloaders/stm32h7.s
+        0x08, 0x4b,
+        0x72, 0xb1,
+        0x04, 0x68,
+        0x0c, 0x60,
+        0xbf, 0xf3, 0x4f, 0x8f,        // DSB Memory barrier for in order flash write
+        0xdc, 0x89,
+        0x14, 0xf0, 0x01, 0x0f,
+        0xfb, 0xd1,
+        0x00, 0xf1, 0x04, 0x00,
+        0x01, 0xf1, 0x04, 0x01,
+        0xa2, 0xf1, 0x01, 0x02,
+        0xef, 0xe7,
+        0x00, 0xbe,                   //     bkpt   #0x00
+        0x00, 0x3c, 0x02, 0x40,
+    };
 
+    static const uint8_t loader_code_stm32h7_lv[] = {
+        // flashloaders/stm32h7lv.s
+        0x92, 0x00,             //      lsls    r2, r2, #2
+        0x09, 0x4b,             //      ldr r3, [pc, #36]   ; (0x20000028 <flash_base>)
+                                // next:
+        0x72, 0xb1,             //      cbz     r2, 24 <done>
+        0x04, 0x78,             //      ldrb    r4, [r0, #0]
+        0x0c, 0x70,             //      strb    r4, [r1, #0]
+        0xbf, 0xf3, 0x4f, 0x8f, //      dsb sy
+                                // wait:
+        0xdc, 0x89,             //      ldrh    r4, [r3, #14]
+        0x14, 0xf0, 0x01, 0x0f, //      tst.w   r4, #1
+        0xfb, 0xd1,             //      bne.n   e <wait>
+        0x00, 0xf1, 0x01, 0x00, //      add     r0, r0, #1
+        0x01, 0xf1, 0x01, 0x01, //      add     r1, r1, #1
+        0xa2, 0xf1, 0x01, 0x02, //      sub     r2, r2, #1
+        0xef, 0xe7,             //      b       next
+                                // done:
+        0x00, 0xbe,             //      bkpt
+        0x00, 0xbf,             //      nop
+                                // flash_base:
+        0x00, 0x3c, 0x02, 0x40  //      .word   0x40023c00
+    };
 
 int stlink_flash_loader_init(stlink_t *sl, flash_loader_t *fl)
 {
@@ -297,6 +337,16 @@ int stlink_flash_loader_write_to_sram(stlink_t *sl, stm32_addr_t* addr, size_t* 
                                                &loader_code, &loader_size,
                                                loader_code_stm32f7, sizeof(loader_code_stm32f7),
                                                loader_code_stm32f7_lv, sizeof(loader_code_stm32f7_lv));
+        if (retval == -1) {
+            return retval;
+        }
+    } else if (sl->core_id == STM32H7_CORE_ID ||
+               sl->chip_id == STLINK_CHIPID_STM32_H7) {
+        int retval;
+        retval = loader_v_dependent_assignment(sl,
+                                               &loader_code, &loader_size,
+                                               loader_code_stm32h7, sizeof(loader_code_stm32h7),
+                                               loader_code_stm32h7_lv, sizeof(loader_code_stm32h7_lv));
         if (retval == -1) {
             return retval;
         }
